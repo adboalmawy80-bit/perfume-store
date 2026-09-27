@@ -1,0 +1,19 @@
+.navbar {
+  background-color: var(--dark-color);
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar a {
+  color: #fff;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.navbar .logo {
+  font-size: 20px;
+  color: var(--primary-color);
+  font-weight: bold;
+}

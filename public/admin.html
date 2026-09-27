@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم المدير - متجر الماوي لللعطور</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
+    body { background-color: #121212; color: #e0e0e0; padding: 20px; }
+    .container { max-width: 1100px; margin: auto; }
+    h1 { color: #d4af37; text-align: center; margin-bottom: 25px; }
+    
+    /* Stats Section */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; text-align: center; }
+    .stat-card h3 { font-size: 14px; color: #aaa; margin-bottom: 8px; }
+    .stat-card p { font-size: 22px; font-weight: bold; color: #d4af37; }
+    
+    .section { background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; margin-bottom: 30px; }
+    .section h2 { color: #fff; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+    
+    /* Form Styles */
+    .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
+    input, button { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: #fff; }
+    button.btn-add { background: #d4af37; color: #000; font-weight: bold; cursor: pointer; border: none; }
+    button.btn-add:hover { background: #b89628; }
+    
+    /* Table Styles */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 12px; text-align: right; border-bottom: 1px solid #333; }
+    th { background: #252525; color: #d4af37; }
+    .btn-del { background: #ef4444; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>👑 لوحة تحكم المدير - متجر الماوي</h1>
+
+    <!-- 📊 دفتر الحسابات والإحصائيات -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>إجمالي المبيعات</h3>
+        <p id="total-sales">0 ج.م</p>
+      </div>
+      <div class="stat-card">
+        <h3>إجمالي الأرباح الصافية</h3>
+        <p id="total-profit" style="color:#22c55e;">0 ج.م</p>
+      </div>
+      <div class="stat-card">
+        <h3>عدد الطلبات</h3>
+        <p id="orders-count">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>عدد العطور المعروضة</h3>
+        <p id="products-count">0</p>
+      </div>
+    </div>
+
+    <!-- ➕ إضافة عطر جديد -->
+    <div class="section">
+      <h2>➕ إضافة عطر جديد للمتجر</h2>
+      <form id="add-product-form">
+        <div class="form-group">
+          <input type="text" id="p-name" placeholder="اسم العطر" required>
+          <input type="number" id="p-price" placeholder="سعر البيع (ج.م)" required>
+          <input type="number" id="p-cost" placeholder="سعر التكلفة عليّ (ج.م)" required>
+          <input type="number" id="p-stock" placeholder="الكمية المتاحة" required>
+        </div>
+        <div class="form-group">
+          <input type="url" id="p-image" placeholder="رابط صورة العطر" required>
+          <button type="submit" class="btn-add">إضافة المنتج الآن</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 📦 قائمة العطور والمخزون الحالي -->
+    <div class="section">
+      <h2>📦 العطور المتاحة في المتجر</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>الصورة</th>
+            <th>الاسم</th>
+            <th>سعر البيع</th>
+            <th>التكلفة</th>
+            <th>الربح/القطعة</th>
+            <th>الكمية</th>
+            <th>الإجراء</th>
+          </tr>
+        </thead>
+        <tbody id="admin-products-list">
+          <!-- يتم التحميل تلقائياً -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 📜 دفتر الطلبات والمبيعات -->
+    <div class="section">
+      <h2>📜 دفتر الطلبات والمبيعات</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>اسم العميل</th>
+            <th>الهاتف</th>
+            <th>العنوان</th>
+            <th>رقم العملية</th>
+            <th>المبلغ</th>
+            <th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody id="admin-orders-list">
+          <!-- يتم التحميل تلقائياً -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // جلب المنتجات والبيانات من السيرفر
+    async function loadAdminData() {
+      // 1. جلب المنتجات
+      const resP = await fetch('/api/products');
+      const dataP = await resP.json();
+      const products = dataP.data || [];
+      
+      document.getElementById('products-count').innerText = products.length;
+
+      const pTable = document.getElementById('admin-products-list');
+      pTable.innerHTML = products.map(p => `
+        <tr>
+          <td><img src="${p.image_url}" width="40" height="40" style="object-fit:cover; border-radius:4px;"></td>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.price} ج.م</td>
+          <td>${p.cost || 0} ج.م</td>
+          <td style="color:#22c55e;">+${(p.price - (p.cost || 0))} ج.م</td>
+          <td>${p.stock !== undefined ? p.stock : 10}</td>
+          <td><button class="btn-del" onclick="deleteProduct(${p.id})">حذف 🗑️</button></td>
+        </tr>
+      `).join('');
+
+      // 2. جلب الطلبات
+      const resO = await fetch('/api/admin/orders');
+      const dataO = await resO.json();
+      const orders = dataO.data || [];
+
+      document.getElementById('orders-count').innerText = orders.length;
+
+      let totalSales = 0;
+      let totalProfit = 0;
+
+      const oTable = document.getElementById('admin-orders-list');
+      oTable.innerHTML = orders.map(o => {
+        totalSales += parseFloat(o.total_amount || 0);
+        totalProfit += parseFloat(o.profit || (o.total_amount * 0.3)); // افتراضي 30% أرباح
+        return `
+          <tr>
+            <td>${o.customer_name || 'عميل'}</td>
+            <td>${o.phone || '-'}</td>
+            <td>${o.address || '-'}</td>
+            <td>${o.transaction_number || '-'}</td>
+            <td>${o.total_amount} ج.م</td>
+            <td>${new Date(o.date || Date.now()).toLocaleDateString('ar-EG')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('total-sales').innerText = totalSales.toFixed(2) + ' ج.م';
+      document.getElementById('total-profit').innerText = totalProfit.toFixed(2) + ' ج.م';
+    }
+
+    // إضافة منتج
+    document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newProduct = {
+        name: document.getElementById('p-name').value,
+        price: parseFloat(document.getElementById('p-price').value),
+        cost: parseFloat(document.getElementById('p-cost').value),
+        stock: parseInt(document.getElementById('p-stock').value),
+        image_url: document.getElementById('p-image').value
+      };
+
+      await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct)
+      });
+
+      alert('تمت إضافة المنتج بنجاح! 🎉');
+      e.target.reset();
+      loadAdminData();
+    });
+
+    // حذف منتج
+    async function deleteProduct(id) {
+      if (confirm('هل أنت تأكد من حذف هذا العطر؟')) {
+        await fetch('/api/admin/products/' + id, { method: 'DELETE' });
+        loadAdminData();
+      }
+    }
+
+    window.onload = loadAdminData;
+  </script>
+</body>
+</html>

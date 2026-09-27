@@ -1,0 +1,240 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متجر الماوي للعطور</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
+    body { background-color: #121212; color: #e0e0e0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #1e1e1e; border-radius: 8px; margin-bottom: 30px; border: 1px solid #333; }
+    .btn { padding: 8px 16px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+    .btn-cart { background: #d4af37; color: #000; }
+    
+    .hero { text-align: center; margin-bottom: 40px; }
+    .hero h1 { color: #d4af37; font-size: 28px; margin-bottom: 10px; }
+    .hero p { color: #aaa; font-size: 16px; }
+
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    .product-card { background: #1e1e1e; border-radius: 8px; padding: 15px; border: 1px solid #333; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+    .product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; }
+    .product-card h3 { color: #fff; font-size: 18px; margin-bottom: 6px; }
+    .product-card .brand { color: #888; font-size: 13px; margin-bottom: 8px; }
+    .product-card .price { color: #d4af37; font-size: 20px; font-weight: bold; margin-bottom: 12px; }
+    .btn-add { background: #d4af37; color: #000; width: 100%; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-add:hover { background: #b89628; }
+
+    /* Modal / Popup */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #1e1e1e; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; border: 1px solid #d4af37; max-height: 90vh; overflow-y: auto; }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; }
+    .close-btn { background: #ef4444; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; float: left; }
+    .btn-remove { background: #ef4444; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+    /* Order Form */
+    .form-group { margin-bottom: 12px; text-align: right; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #ccc; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: #fff; }
+    .btn-checkout { background: #22c55e; color: #fff; width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; }
+    .btn-checkout:hover { background: #16a34a; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h2>✨ متجر الماوي للعطور</h2>
+    <button class="btn btn-cart" onclick="toggleCart()">السلة (<span id="cart-count">0</span>)</button>
+  </div>
+
+  <div class="hero">
+    <h1>أرقى العطور العالمية والشرقية</h1>
+    <p>دفع محلي سريع وتوصيل لجميع المحافظات</p>
+  </div>
+
+  <div class="products-grid" id="products-container">
+    <!-- يتم تحميل العطور تلقائياً -->
+  </div>
+
+  <!-- نافذة السلة الشاملة -->
+  <div class="modal" id="cart-modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="toggleCart()">إغلاق ✖</button>
+      <h2 style="color:#d4af37; margin-bottom:15px; text-align:center;">🛒 سلة التسوق وإتمام الطلب</h2>
+      
+      <div id="cart-items-list">
+        <p style="text-align:center; color:#aaa;">السلة فارغة حالياً</p>
+      </div>
+
+      <hr style="margin:15px 0; border-color:#333;">
+      
+      <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px; margin-bottom: 15px;">
+        <span>الإجمالي:</span>
+        <span id="cart-total" style="color:#d4af37;">0 ج.م</span>
+      </div>
+
+      <!-- نموذج تفاصيل الطلب والدفع -->
+      <form id="checkout-form" onsubmit="submitOrder(event)">
+        <div class="form-group">
+          <label>اسم العميل بالكامل:</label>
+          <input type="text" id="cust-name" required placeholder="أدخل اسمك الكريم">
+        </div>
+        <div class="form-group">
+          <label>رقم الهاتف:</label>
+          <input type="tel" id="cust-phone" required placeholder="01xxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>عنوان التوصيل:</label>
+          <input type="text" id="cust-address" required placeholder="المحافظة - المدينة - الشارع">
+        </div>
+        <div class="form-group">
+          <label>طريقة الدفع:</label>
+          <select id="pay-method" onchange="togglePayDetails()">
+            <option value="cod">دفع عند الاستلام 🚚</option>
+            <option value="paymob">بطاقة بنكية / محفظة إلكترونية (Paymob) 💳</option>
+          </select>
+        </div>
+        <div class="form-group" id="trans-group" style="display:none;">
+          <label>رقم عملية الدفع / التحويل:</label>
+          <input type="text" id="trans-num" placeholder="أدخل رقم العملية المعاملة">
+        </div>
+
+        <button type="submit" class="btn-checkout">تأكيد وإرسال الطلب الآن 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let cart = [];
+    window.allProducts = [];
+
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        const container = document.getElementById('products-container');
+        
+        if (data.data && data.data.length > 0) {
+          window.allProducts = data.data;
+          container.innerHTML = data.data.map(p => `
+            <div class="product-card">
+              <div>
+                <img src="${p.image_url}" alt="${p.name}">
+                <h3>${p.name}</h3>
+                <div class="brand">${p.brand || 'عطر فاخر'}</div>
+              </div>
+              <div>
+                <div class="price">${p.price} ج.م</div>
+                <button class="btn-add" onclick="addToCart(${p.id})">إضافة للسلة 🛒</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">لا توجد عطور معروضة حالياً.</p>';
+        }
+      } catch (err) {
+        console.error('خطأ في جلب المنتجات:', err);
+      }
+    }
+
+    function addToCart(id) {
+      const product = window.allProducts.find(p => p.id === id);
+      if (product) {
+        cart.push(product);
+        updateCartUI();
+        alert(`تمت إضافة "${product.name}" إلى السلة بنجاح! 🛒`);
+      }
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      document.getElementById('cart-count').innerText = cart.length;
+      const cartList = document.getElementById('cart-items-list');
+      const totalSpan = document.getElementById('cart-total');
+
+      if (cart.length === 0) {
+        cartList.innerHTML = '<p style="text-align:center; color:#aaa;">السلة فارغة حالياً</p>';
+        totalSpan.innerText = '0 ج.م';
+        return;
+      }
+
+      let total = 0;
+      cartList.innerHTML = cart.map((item, index) => {
+        total += parseFloat(item.price);
+        return `
+          <div class="cart-item">
+            <div>
+              <strong>${item.name}</strong>
+              <div style="font-size:12px; color:#888;">${item.price} ج.م</div>
+            </div>
+            <button class="btn-remove" onclick="removeFromCart(${index})">حذف 🗑️</button>
+          </div>
+        `;
+      }).join('');
+
+      totalSpan.innerText = total + ' ج.م';
+    }
+
+    function togglePayDetails() {
+      const method = document.getElementById('pay-method').value;
+      const transGroup = document.getElementById('trans-group');
+      transGroup.style.display = (method === 'paymob') ? 'block' : 'none';
+    }
+
+    function toggleCart() {
+      const modal = document.getElementById('cart-modal');
+      modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    async function submitOrder(e) {
+      e.preventDefault();
+      if (cart.length === 0) {
+        alert('السلة فارغة! قم بإضافة عطور أولاً.');
+        return;
+      }
+
+      let totalAmount = 0;
+      let totalCost = 0;
+      cart.forEach(item => {
+        totalAmount += parseFloat(item.price || 0);
+        totalCost += parseFloat(item.cost || 0);
+      });
+
+      const orderData = {
+        customer_name: document.getElementById('cust-name').value,
+        phone: document.getElementById('cust-phone').value,
+        address: document.getElementById('cust-address').value,
+        payment_method: document.getElementById('pay-method').value,
+        transaction_number: document.getElementById('trans-num').value || 'N/A',
+        items: cart,
+        total_amount: totalAmount,
+        profit: totalAmount - totalCost
+      };
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          alert('🎉 تم تسجيل طلبك بنجاح! شكراً لتسوقك من متجر الماوي.');
+          cart = [];
+          updateCartUI();
+          document.getElementById('checkout-form').reset();
+          toggleCart();
+        }
+      } catch (err) {
+        alert('حدث خطأ أثناء إرسال الطلب، يرجى المحاولة مرة أخرى.');
+      }
+    }
+
+    window.onload = loadProducts;
+  </script>
+</body>
+</html>

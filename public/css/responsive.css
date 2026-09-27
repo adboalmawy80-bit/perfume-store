@@ -1,0 +1,9 @@
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .grid {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+}
